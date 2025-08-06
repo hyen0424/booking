@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>예약 시스템(입/퇴실)</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        margin-bottom: 30px;
+        color: #333;
+        font-size: 24px;
+      }
+
+      form {
+        background: #fff;
+        padding: 25px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        max-width: 400px;
+        width: 100%;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background-color: #fafafa;
+      }
+
+      .date-input {
+        background: #f0f0f0;
+        cursor: pointer;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #007aff;
+        color: white;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background-color: #005be3;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+      }
+
+      .modal-content {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 400px;
+        text-align: left;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.3s ease;
+      }
+
+      .modal-content h2 {
+        margin-top: 0;
+        color: #007aff;
+      }
+
+      .modal-content p {
+        margin: 10px 0;
+        color: #333;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>예약 시스템</h1>
+    <form id="bookingForm">
+      <div class="form-group">
+        <label for="dateRange">입실날짜 - 퇴실날짜</label>
+        <input
+          type="text"
+          id="dateRange"
+          class="date-input"
+          readonly
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="adults">성인 수</label>
+        <select id="adults" required>
+          <option value="">선택하세요</option>
+          <option value="1">1명</option>
+          <option value="2">2명</option>
+          <option value="3">3명</option>
+          <option value="4">4명</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="children">미성년자 수</label>
+        <select id="children" required>
+          <option value="0">0명</option>
+          <option value="1">1명</option>
+          <option value="2">2명</option>
+          <option value="3">3명</option>
+          <option value="4">4명</option>
+        </select>
+      </div>
+      <button type="submit">예약하기</button>
+    </form>
+
+    <div class="modal-overlay" id="modal">
+      <div class="modal-content" id="result"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const dateRangeInput = document.querySelector("#dateRange");
+        const picker = new Litepicker({
+          element: dateRangeInput,
+          singleMode: false,
+          numberOfMonths: 2,
+          numberOfColumns: 2,
+          startDate: new Date(),
+          endDate: new Date(new Date().setDate(new Date().getDate() + 1)),
+          minDate: new Date(),
+          format: "YYYY-MM-DD",
+          lang: "ko-KR",
+          tooltipText: {
+            one: "박",
+            other: "박",
+          },
+          tooltipNumber: (totalDays) => totalDays - 1,
+        });
+
+        const form = document.querySelector("#bookingForm");
+        const modal = document.querySelector("#modal");
+        const resultDiv = document.querySelector("#result");
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const [checkIn, checkOut] = dateRangeInput.value.split(" - ");
+          const adults = document.querySelector("#adults").value;
+          const children = document.querySelector("#children").value;
+
+          if (!checkIn || !checkOut || !adults) {
+            alert("모든 정보를 입력해주세요.");
+            return;
+          }
+
+          const nights = Math.round(
+            (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)
+          );
+
+          resultDiv.innerHTML = `
+            <h2>예약 완료</h2>
+            <p><strong>입실:</strong> ${checkIn}</p>
+            <p><strong>퇴실:</strong> ${checkOut}</p>
+            <p><strong>숙박:</strong> ${nights}박</p>
+            <p><strong>성인:</strong> ${adults}명</p>
+            <p><strong>미성년자:</strong> ${children}명</p>
+            <button id="cancelBtn">취소하기</button>
+          `;
+
+          modal.style.display = "flex";
+        });
+        resultDiv.addEventListener("click", function (e) {
+          if (e.target.id === "cancelBtn") {
+            modal.style.display = "none";
+          }
+        });
+
+        document
+          .querySelector("#modal")
+          .addEventListener("click", function (e) {
+            if (e.target === modal) {
+              modal.style.display = "none";
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
